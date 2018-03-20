@@ -92,18 +92,7 @@ public:
 		if (size == 0 || src==NULL) {
 			return;
 		}
-#ifdef _PRINT_DEBUG
-		std::cout << std::endl;
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we will push back " << size << " bytes!" << std::endl;
-#endif
+
 		if ((*begin) != (size_t)-1) {
 			if ((*begin) >= (*end)) {
 				throw std::logic_error("Buffer end lower than start!");
@@ -122,47 +111,16 @@ public:
 			
 		}
 		for (size_t i = 0; i < size; i++) {
-#ifdef _PRINT_DEBUG
-			if(((i+(*end))/defaultsize)>=_buffer->size()){
-				std::cout<<"Now _buffer size= "<<_buffer->size()<<std::endl;
-				throw std::logic_error("_buffer size is not enough!");
-			}
-			if((*_buffer)[(i + (*end)) / defaultsize]==NULL){
-				throw std::logic_error("Memory Allocate or destroy error!");
-			}
 
-#endif
 			(*_buffer)[(i + (*end)) / defaultsize][(i + (*end)) % defaultsize] = src[i];
 		}
 		(*end) += size;
-#ifdef _PRINT_DEBUG
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we have push back " << size << " bytes!" << std::endl;
-		std::cout << std::endl;
-#endif
+
 
 	}
 	void pop_back_n(size_t size) {
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
-#ifdef _PRINT_DEBUG
-		std::cout << std::endl;
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we will pop back " << size << " bytes!" << std::endl;
-#endif		
+	
 		if ((*begin) == (size_t)-1) {
 			*end = 0;
 		}
@@ -191,33 +149,11 @@ public:
 				_buffer->pop_back();
 			}
 		}
-#ifdef _PRINT_DEBUG
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we have pop back " << size << " bytes!" << std::endl;
-		std::cout << std::endl;
-#endif
+
 	}
 	void pop_front_n(size_t size) {
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
-#ifdef _PRINT_DEBUG
-		std::cout << std::endl;
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is "<<*begin<<" and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we will pop front " << size << " bytes!" << std::endl;
-#endif
+
 		if ((*begin) == (size_t)-1) {
 			*end = 0;
 		}
@@ -244,36 +180,14 @@ public:
 				_buffer->pop_front();
 			}
 		}
-#ifdef _PRINT_DEBUG
-		if ((*begin) == (size_t)-1) {
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we have pop front " << size << " bytes!" << std::endl;
-		std::cout << std::endl;
-#endif
+
 	}
 	void push_front_n(char *src, size_t size) {
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
 		if (size == 0 || src==NULL) {
 			return;
 		}
-#ifdef _PRINT_DEBUG
-			std::cout << std::endl;
-			if ((*begin) == (size_t)-1) {
-				std::cout << "begin is -1 and end is " << *end << std::endl;
-			}
-			else {
-				std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-				std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-				std::cout << "now buffer size= " << _buffer->size() << std::endl;
-			}
-			std::cout << "we will push front " << size << " bytes!" << std::endl;
-#endif
+
 		/*如空间不足申请空间，否则直接复制*/
 		if ((*begin) == (size_t)-1) {
 			(*begin)=0;
@@ -300,19 +214,6 @@ public:
 		for (size_t i = 0; i < size; i++) {
 			(*_buffer)[((*begin)+i) / defaultsize][((*begin) + i) % defaultsize] = src[i];
 		}
-#ifdef _PRINT_DEBUG
-		if ((*begin) == (size_t)-1) {
-			
-			std::cout << "begin is -1 and end is " << *end << std::endl;
-		}
-		else {
-			std::cout << "begin is " << *begin << " and end is " << *end << std::endl;
-			std::cout << "now size=" << ((*end) - (*begin)) << std::endl;
-			std::cout << "now buffer size= " << _buffer->size() << std::endl;
-		}
-		std::cout << "we have push front " << size << " bytes!" << std::endl; 
-		std::cout << std::endl;
-#endif	
 	}
 
 
