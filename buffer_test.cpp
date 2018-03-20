@@ -127,8 +127,14 @@ void test1(buffer testbuff) {
 	if (threadnum.load() == 0) {
 		return;
 	}
-	std::thread newthread(test, testbuff);
-	newthread.detach();
+	try{
+		std::thread newthread(test, testbuff);
+		newthread.detach();
+	}
+	catch(std::exception& e){
+		std::cout<<e.what();
+		return;
+	}
 	datatest(testbuff);
 	threadnum.fetch_add(-1);
 }
@@ -139,8 +145,14 @@ void test(buffer testbuff) {
 	if (threadnum.load() == 0) {
 		return;
 	}
-	std::thread newthread(test1, testbuff);
-	newthread.detach();
+	try{
+		std::thread newthread(test, testbuff);
+		newthread.detach();
+	}
+	catch(std::exception& e){
+		std::cout<<e.what();
+		return;
+	}
 	datatest(testbuff);
 	threadnum.fetch_add(-1);
 }
