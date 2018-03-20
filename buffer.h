@@ -89,7 +89,7 @@ public:
 
 	void push_back_n(char *src, size_t size) {
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
-		if (size == 0) {
+		if (size == 0 || src==NULL) {
 			return;
 		}
 #ifdef _PRINT_DEBUG
@@ -259,7 +259,7 @@ public:
 	}
 	void push_front_n(char *src, size_t size) {
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
-		if (size == 0) {
+		if (size == 0 || src==NULL) {
 			return;
 		}
 #ifdef _PRINT_DEBUG
