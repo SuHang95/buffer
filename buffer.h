@@ -253,7 +253,7 @@ public:
 	}
 
 
-private:
+protected:
 	std::deque<char *>* _buffer;
 	std::atomic<int>* counter;
 	std::mutex* mutex_for_data;
