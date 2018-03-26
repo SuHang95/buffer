@@ -1,9 +1,15 @@
 #include"buffer.h"
 #include<thread>
-#include <cstdlib>  
-#include <cstdio>  
-#include <time.h>
+#include<cstdlib>  
+#include<cstdio>  
+#include<time.h>
 #include<iostream>
+#include"../../SuLog/logger.h"
+#include<exception>
+
+
+logger log("buffertest");
+
 std::atomic<int> threadnum;
 std::mutex mutex_for_queue;
 #define testbuffsize 69128
@@ -15,7 +21,26 @@ std::mutex mutex_for_queue;
 
 
 void test(buffer _test);
+inline size_t __test_getbegin(buffer& testbuff){
+	if(testbuff.size()==0)
+		return 0;
+	size_t i = 0;
+	for (size_t j = 0; j < sizeof(size_t); j++) {
+		((char*)&i)[j] = testbuff.get(j);
+	}
+	return i;
+}
 
+
+inline size_t __test_getlast(buffer& testbuff){
+	if(testbuff.size()==0)
+		return 0;
+	size_t i = 0;
+	for (size_t j = 0; j < sizeof(size_t); j++) {
+		((char*)&i)[j] = testbuff.get(testbuff.size() - sizeof(size_t) + j);
+	}
+	return i;
+}
 
 int main() {
 	buffer testbuff;
@@ -59,64 +84,105 @@ inline void datatest(buffer testbuff){
 	srand(time(0));
 	mutex_for_queue.lock();
 	if (rand() % 4 == 0) {
-		if (testbuff.size() != 0)
-			testbuff.pop_front_n((rand() * sizeof(size_t)) % testbuffsize);
+		if (testbuff.size() != 0){
+			log.print("before pop_front_n,now begin=%zd,last=%zd,size=%zd",
+				__test_getbegin(testbuff),__test_getlast(testbuff),
+				testbuff.size());
+
+			size_t pop_front_size=((size_t)rand()) % testbuffsize;
+			testbuff.pop_front_n(pop_front_size * sizeof(size_t));
+
+			log.print("pop_front_n %zd number,now begin=%zd,last=%zd,size=%zd",
+				pop_front_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
+		}
 	}
 	else if (rand() % 4 == 1) {
 		if (testbuff.size() != 0) {
-			size_t i = 0;
-			for (size_t j = 0; j < sizeof(size_t); j++) {
-				((char*)&i)[j] = testbuff.get(j);
-			}
+			log.print("before push_front_n,now begin=%zd,last=%zd,size=%zd",
+				__test_getbegin(testbuff),__test_getlast(testbuff),
+				testbuff.size());
+
+			size_t begin=__test_getbegin(testbuff);
 			size_t push_front_size = ((size_t)rand()) % testbuffsize;
-			i -= push_front_size;
-			char *_buff = new char[push_front_size * sizeof(size_t)];
+			begin -= push_front_size;
+			size_t* _buff = new size_t[push_front_size];
 			for (size_t j = 0; j< push_front_size; j++) {
-				((size_t *)_buff)[j] = i;
-				i++;
+				_buff[j] = begin;
+				begin++;
 			}
-			testbuff.push_front_n(_buff, push_front_size * sizeof(size_t));
+			testbuff.push_front_n((char *)_buff, push_front_size * sizeof(size_t));
 			delete _buff;
+
+			log.print("push_front_n %zd number,now begin=%zd,last=%zd,size=%zd",
+				push_front_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
 		}
 		else {
+			log.print("Now the testbuff is null!");
+
 			size_t push_front_size = ((size_t)rand()) % testbuffsize;
-			char *_buff = new char[push_front_size * sizeof(size_t)];
+			size_t* _buff = new size_t[push_front_size];
 
 			for (size_t j = 0; j< push_front_size; j++) {
-				((size_t *)_buff)[j] = j;
+				_buff[j] = j;
 			}
-			testbuff.push_front_n(_buff, push_front_size * sizeof(size_t));
+			testbuff.push_front_n((char *)_buff, push_front_size * sizeof(size_t));
 			delete _buff;
+
+			log.print("push_front_n %zd number,now begin=%zd,last=%zd,size=%zd",
+				push_front_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
 		}
 	}
 	else if (rand() % 4 == 2) {
-		size_t size = testbuff.size();
-		if (size != 0)
-			testbuff.pop_back_n(rand() % testbuffsize);
+		if (testbuff.size() != 0){
+			log.print("before pop_back_n,now begin=%zd,last=%zd,size=%zd",
+				__test_getbegin(testbuff),__test_getlast(testbuff),
+				testbuff.size());
+
+			size_t pop_back_size = ((size_t)rand()) % testbuffsize;
+			testbuff.pop_back_n(pop_back_size*sizeof(size_t));
+
+			log.print("pop_back_n %zd number,now begin=%zd,last=%zd\n,size=%zd",
+				pop_back_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
+		}
 	}
 	else {
 		if (testbuff.size() != 0) {
-			size_t i = 0;
-			for (size_t j = 0; j < sizeof(size_t); j++) {
-				((char*)&i)[j] = testbuff.get(testbuff.size() - sizeof(size_t) + j);
-			}
+			log.print("before push_back_n,now begin=%zd,last=%zd,size=%zd",
+				__test_getbegin(testbuff),__test_getlast(testbuff),
+				testbuff.size());
+
+			size_t last=__test_getlast(testbuff);
 			size_t push_back_size = ((size_t)rand()) % testbuffsize;
-			char *_buff = new char[push_back_size * sizeof(size_t)];
+			size_t* _buff = new size_t[push_back_size];
 			for (size_t j = 0; j< push_back_size; j++) {
-				((size_t *)_buff)[j] = ++i;
+				_buff[j] = ++last;
 			}
-			testbuff.push_back_n(_buff, push_back_size * sizeof(size_t));
+			testbuff.push_back_n((char *)_buff, push_back_size * sizeof(size_t));
 			delete _buff;
+
+			log.print("push_back_n %zd number,now begin=%zd,last=%zd\n,size=%zd",
+				push_back_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
 		}
 		else {
+			log.print("Now the testbuff is null!");
+
 			size_t push_back_size = ((size_t)rand()) % testbuffsize;
-			char *_buff = new char[push_back_size * sizeof(size_t)];
+			size_t *_buff = new size_t[push_back_size];
 
 			for (size_t j = 0; j< push_back_size; j++) {
-				((size_t *)_buff)[j] = j;
+				_buff[j] = j;
 			}
-			testbuff.push_back_n(_buff, push_back_size * sizeof(size_t));
+			testbuff.push_back_n((char *)_buff, push_back_size * sizeof(size_t));
 			delete _buff;
+
+			log.print("push_back_n %zd number,now begin=%zd,last=%zd,size=%zd",
+				push_back_size,__test_getbegin(testbuff),
+				__test_getlast(testbuff),testbuff.size());
 		}
 	}
 	mutex_for_queue.unlock();
@@ -131,17 +197,17 @@ void test1(buffer testbuff) {
 		std::thread newthread(test, testbuff);
 		newthread.detach();
 	}
-	catch(std::exception& e){
-		std::cout<<e.what();
-		return;
+	catch(std::exception& ex){
+		std::cout<<ex.what()<<std::endl;
+		threadnum.store(0);
 	}
 	datatest(testbuff);
-	threadnum.fetch_add(-1);
+	if(threadnum.fetch_add(-1)==0)
+		threadnum.store(0);
 }
 
 
 void test(buffer testbuff) {
-
 	if (threadnum.load() == 0) {
 		return;
 	}
@@ -149,11 +215,12 @@ void test(buffer testbuff) {
 		std::thread newthread(test, testbuff);
 		newthread.detach();
 	}
-	catch(std::exception& e){
-		std::cout<<e.what();
-		return;
+	catch(std::exception& ex){
+		std::cout<<ex.what()<<std::endl;
+		threadnum.store(0);
 	}
 	datatest(testbuff);
-	threadnum.fetch_add(-1);
+	if(threadnum.fetch_add(-1)==0)
+		threadnum.store(0);
 }
 
