@@ -67,10 +67,9 @@ public:
 		this->begin = other.begin;
 		this->end = other.end;
 	}
-	~buffer() {
+	virtual ~buffer() {
 		this->counter->fetch_sub(1);
 		if (this->counter->load() == 0) {
-			std::cout << "Start destroy!";
 			delete this->counter;
 			mutex_for_data->lock();
 			while (!_buffer->empty()) {
