@@ -225,13 +225,26 @@ public:
 			return (*_buffer)[((*begin) + n) / defaultsize][((*begin) + n) % defaultsize];
 		}
 	}
+	//not checked
 	void get_n(size_t n,char *dest,size_t size){
 		std::lock_guard<std::mutex> protect(*mutex_for_data);
-		if (((n+size-1) >= ((*end) - (*begin))) || (*begin == (size_t)-1)) {
-			throw std::logic_error("Buffer Overflow!");
+		if( ((*read_buffer.begin)==(size_t)-1) && ((*read_buffer.begin)>=(*read_buffer.end))){
+			(*read_buffer.begin)=-1;
+			(*read_buffer.end)=0;
+			return 0;
 		}
+		if ( n > ((*end) - (*begin)) ) {
+			return 0;
+		}
+		if ( ((*begin) + n + size - 1) >= (*end) ){
+			size = (*end) - ((*begin) + n) + 1;
+		}
+		char *this_block_ptr=(*_buffer)[((*begin) + n) / defaultsize];
 		for (size_t i = 0; i < size; i++) {
-			dest[i] = (*_buffer)[((*begin) + n + i) / defaultsize][((*begin) + n + i) % defaultsize];
+			if(((*begin) + n + i)%defaultsize==0)
+				this_block_ptr = (*_buffer)[((*begin) + n + i) / defaultsize];
+			dest[i] = this_block_ptr[((*begin) + n + i) % defaultsize];
+			//dest[i] = (*_buffer)[((*begin) + n + i) / defaultsize][((*begin) + n + i) % defaultsize];
 		}
 	}
 	void set(size_t n,char a) {
@@ -251,8 +264,48 @@ public:
 		return ((*end) - (*begin));
 	}
 
-
+	
 protected:
+	inline void shrink_size(){
+		if((*begin)== (size_t)-1 || (*begin)>=(*end)){
+			(*begin)=(size_t)-1;
+			(*end)=0;
+		}
+
+
+		if ((*begin) == (size_t)-1) {
+			while (_buffer->size()> 10) {
+				delete (*_buffer)[0];
+				_buffer->pop_front();
+			}
+		}
+		else {
+			while (((*begin) / defaultsize) > 10) {
+				delete (*_buffer)[0];
+				(*begin) -= defaultsize;
+				(*end) -= defaultsize;
+				_buffer->pop_front();
+			}
+		}
+		
+		
+		if ((*end) == 0) {
+			size_t now = _buffer->size();
+			while (now > 10) {
+				delete (*_buffer)[0];
+				now--;
+				_buffer->pop_front();
+			}
+		}
+		else {
+			size_t now = _buffer->size();
+			while ((now - ((*end - 1) / defaultsize)) > 10) {
+				delete (*_buffer)[now - 1];
+				now--;
+				_buffer->pop_back();
+			}
+		}
+	}
 	std::deque<char *>* _buffer;
 	std::atomic<int>* counter;
 	std::mutex* mutex_for_data;
