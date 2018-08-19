@@ -1,13 +1,13 @@
-#include"../iobuffer.h"
+#include"iobuffer.h"
 #include<atomic>
 #include<thread>
-#include"../../../SuLog/logger.h"
+#include<sulog/logger.h>
 #include<exception>
 #include<time.h>
 #include<iostream>
 #include<unistd.h>
 #define testbuffsize 69128
-std::atomic<int> threadnum(500);
+std::atomic<int> threadnum(100);
 std::mutex mutex_for_queue;
 logger log("IoBufferTestLog");
 
@@ -36,7 +36,7 @@ inline size_t __test_getlast(buffer& testbuff){
 
 inline char* __test_getnumptr(size_t n){
 	size_t* ptr=new size_t[n];
-	size_t j=0x7521563421;
+	size_t j=0x7521;
 	for(size_t i=0;i<n;i++){
 		ptr[i]=j++;
 	}
@@ -64,7 +64,7 @@ void datatest(iobuffer testbuff){
 	
 	iobuffer other=testbuff;
 	size_t pop_size = ((size_t)rand()) % testbuffsize;
-	testbuff.pop_back_to_other_front_n(other,pop_size*sizeof(size_t));
+	testbuff.pop_front_to_other_back_n(other,pop_size*sizeof(size_t));
 
 	log.print("after pop_back_to_other_front_n %zd bytes,now begin=%zd,last=%zd,size=%zd",
 		pop_size*sizeof(size_t),__test_getbegin(testbuff),
@@ -74,6 +74,7 @@ void datatest(iobuffer testbuff){
 	mutex_for_queue.unlock();
 
 }
+
 void test(iobuffer testbuff);
 void test1(iobuffer testbuff) {
 	if (threadnum.load() == 0) {
@@ -94,9 +95,8 @@ void test1(iobuffer testbuff) {
 
 
 void test(iobuffer testbuff) {
-	if (threadnum.load() == 0) {
+	if(threadnum.fetch_sub(1)==1)
 		return;
-	}
 	try{
 		std::thread newthread(test1, testbuff);
 		newthread.detach();
@@ -106,8 +106,6 @@ void test(iobuffer testbuff) {
 		threadnum.store(0);
 	}
 	datatest(testbuff);
-	if(threadnum.fetch_add(-1)==0)
-		threadnum.store(0);
 }
 
 
@@ -130,16 +128,16 @@ int main(){
 	newthread.detach();
 	while (threadnum.load() != 0) {
 #ifdef _WIN32
-		_sleep(100);
+		_sleep(1000);
 #else
-		usleep(100);
+		usleep(1000);
 #endif
 	}
-	for(size_t i=0;i<1000000;i++){
+
+
+	for(int i=0;i<1000000;i++){
 		datatest(testbuff);
-
 	}
-
 
 
 	mutex_for_queue.lock();

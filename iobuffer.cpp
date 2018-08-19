@@ -2,7 +2,6 @@
 
 
 void iobuffer::pop_back_to_other_front_n(iobuffer& other,size_t n){
-
 	//if this two instance point to same buffer in fact
 	if((size_t)(begin)==(size_t)(other.begin)){
 		this->mutex_for_data->lock();
@@ -65,6 +64,7 @@ void iobuffer::pop_front_to_other_back_n(iobuffer& other,size_t n){
 
 
 void iobuffer::self_pop_back_to_front_n(size_t n){
+	check();
 	if( ((*begin)==(size_t)-1) || (n==0) || (n>=((*end)-(*begin))) ){
 		return;
 	}
@@ -142,18 +142,16 @@ void iobuffer::self_pop_back_to_front_n(size_t n){
 
 			(*end)--;
 	}
-
+	check();
+	__shrink_size();
 }
 
 
 
-
-
-
-
-
 void iobuffer::other_pop_back_to_front_n(iobuffer& other,size_t n){
-	if( ((*begin)==(size_t)-1) || (n==0) ){
+	check();
+	other.check();
+	if( (*begin)==(size_t)-1 ){
 		return;
 	}
 	
@@ -260,14 +258,15 @@ void iobuffer::other_pop_back_to_front_n(iobuffer& other,size_t n){
 
 			(*end)--;
 	}	
-	if((*end)==(*begin)){
-		*begin=-1;
-		*end=0;
-	}
+	check();
+	other.check();
+	__shrink_size();
+	other.__shrink_size();
 }
 
 
 void iobuffer::self_pop_front_to_back_n(size_t n){
+	check();
 	if( ((*begin)==(size_t)-1) || (n==0) || (n>=((*end)-(*begin))) ){
 		return;
 	}	
@@ -333,15 +332,15 @@ void iobuffer::self_pop_front_to_back_n(size_t n){
 			first_block_ptr[(*begin)%defaultsize];
 		(*end)++;
 		(*begin)++;
-	}	
-	if((*end)==(*begin)){
-		(*begin)=-1;
-		(*end)=0;
 	}
+	check();
+	__shrink_size();
 }
 
 
 void iobuffer::other_pop_front_to_back_n(iobuffer& other,size_t n){
+	check();
+	other.check();
 	if( ((*begin)==(size_t)-1) || (n==0)){
 		return;
 	}
@@ -451,9 +450,9 @@ void iobuffer::other_pop_front_to_back_n(iobuffer& other,size_t n){
 		(*other.end)++;
 		(*begin)++;
 	}	
-	if((*end)==(*begin)){
-		*begin=-1;
-		*end=0;
-	}
+	check();
+	other.check();
+	__shrink_size();
+	other.__shrink_size();
 }
 

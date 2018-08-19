@@ -1,11 +1,12 @@
-#include"../iobuffer.h"
+#include"iobuffer.h"
 #include<atomic>
 #include<thread>
-#include"../../../SuLog/logger.h"
+#include<sulog/logger.h>
 #include<exception>
 #include<time.h>
 #include<iostream>
 #include<unistd.h>
+#include<sys/syscall.h>
 #define testbuffsize 69128
 std::atomic<int> threadnum(100);
 std::mutex mutex_for_queue;
@@ -56,15 +57,18 @@ inline void __test_print(iobuffer& testbuff){
 }
 void datatest(iobuffer testbuff){
 	srand(time(0));
+	pid_t tid=syscall(SYS_gettid);
+	log.debug("thread %d require to get the lock mutex_for_queue!",tid);
 	mutex_for_queue.lock();
+    log.debug("thread %d hava got the lock mutex_for_queue!",tid);
 
 	log.print("before pop_back_to_other_front_n,now begin=%zd,last=%zd,size=%zd",
 		__test_getbegin(testbuff),__test_getlast(testbuff),testbuff.size());
 
-	
+
 	iobuffer other=testbuff;
 	size_t pop_size = ((size_t)rand()) % testbuffsize;
-	testbuff.pop_front_to_other_back_n(other,pop_size*sizeof(size_t));
+	testbuff.pop_back_to_other_front_n(other,pop_size*sizeof(size_t));
 
 	log.print("after pop_back_to_other_front_n %zd bytes,now begin=%zd,last=%zd,size=%zd",
 		pop_size*sizeof(size_t),__test_getbegin(testbuff),
@@ -72,43 +76,38 @@ void datatest(iobuffer testbuff){
 
 
 	mutex_for_queue.unlock();
-
+    log.debug("thread %d release the lock mutex_for_queue!",tid);
 }
-
 void test(iobuffer testbuff);
 void test1(iobuffer testbuff) {
-	if (threadnum.load() == 0) {
+	if(threadnum.fetch_sub(1)==1)
 		return;
-	}
 	try{
 		std::thread newthread(test, testbuff);
 		newthread.detach();
 	}
 	catch(std::exception& ex){
 		std::cout<<ex.what()<<std::endl;
+		log.print("An exception catched,which is %s!",ex.what());
 		threadnum.store(0);
 	}
 	datatest(testbuff);
-	if(threadnum.fetch_add(-1)==0)
-		threadnum.store(0);
 }
 
-
+    
 void test(iobuffer testbuff) {
-	if (threadnum.load() == 0) {
-		return;
-	}
+    if(threadnum.fetch_sub(1)==1)
+        return;
 	try{
 		std::thread newthread(test1, testbuff);
 		newthread.detach();
 	}
 	catch(std::exception& ex){
 		std::cout<<ex.what()<<std::endl;
+		log.print("An exception catched,which is %s!",ex.what());
 		threadnum.store(0);
 	}
 	datatest(testbuff);
-	if(threadnum.fetch_add(-1)==0)
-		threadnum.store(0);
 }
 
 
@@ -131,16 +130,15 @@ int main(){
 	newthread.detach();
 	while (threadnum.load() != 0) {
 #ifdef _WIN32
-		_sleep(1000);
+		_sleep(100);
 #else
-		usleep(1000);
+		usleep(100);
 #endif
 	}
-
-
-	for(int i=0;i<1000000;i++){
+	for(size_t i=0;i<1000000;i++){
 		datatest(testbuff);
 	}
+
 
 
 	mutex_for_queue.lock();
